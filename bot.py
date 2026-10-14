@@ -1,67 +1,55 @@
-import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+import os
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = "8298915888:AAH0jBRnZ3F0cYFiCzOTvZpG4r1i5FnzZPE"
-TIKTOK_LINK = "https://www.tiktok.com/@batas_lintas9?_r=1&_t=ZS-9AY4QMGZnm8"
+TOKEN = os.environ.get("8298915888:AAH0jBRnZ3F0cYFiCzOTvZpG4r1i5FnzZPE")
 
-KATALOG = {
-    "beat": [
-        {"nama": "Spion Click Beat", "harga": "Rp 45.000", "desk": "Spion model click, drat Honda, PNP Beat"},
-        {"nama": "Cover Knalpot Beat", "harga": "Rp 85.000", "desk": "Carbon glossy, anti panas"},
-        {"nama": "Karpet Beat Deluxe", "harga": "Rp 60.000", "desk": "Bahan karet tebal"},
-    ],
-    "vario": [
-        {"nama": "Visor Vario 160 Smoke", "harga": "Rp 120.000", "desk": "Model jenong, smoke"},
-        {"nama": "Mudflap Vario", "harga": "Rp 35.000", "desk": "Penahan lumpur"},
-    ],
-    "nmax": [
-        {"nama": "Bracket Plat NMAX Old", "harga": "Rp 55.000", "desk": "Besi tebal, chrome"},
-        {"nama": "Cover Radiator NMAX", "harga": "Rp 95.000", "desk": "Variasi CNC"},
-    ]
+DATA_MOTOR = {
+    "beat": "Beat 2019: 12jt\nBeat 2020: 13.5jt\nBeat Street 2021: 14jt",
+    "vario": "Vario 125 2020: 16jt\nVario 150 2021: 20jt",
+    "scoopy": "Scoopy 2020: 15jt\nScoopy 2021: 16.5jt",
+    "pcx": "PCX 2020: 23jt\nPCX 160 2022: 29jt"
 }
 
+TIKTOK_LINK = "https://www.tiktok.com/@batas_lintas9"
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🛵 BEAT", callback_data="beat")],
-        [InlineKeyboardButton("🏍️ VARIO", callback_data="vario")],
-        [InlineKeyboardButton("📦 NMAX", callback_data="nmax")],
-        [InlineKeyboardButton("🎥 TikTok Kami - batas_lintas9", url=TIKTOK_LINK)],
-    ]
-    text = "Halo bro! Selamat datang di Katalog Motor Aceh 🏍️\n\nMau cari aksesoris apa? Pilih di bawah 👇"
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    keyboard = [["Beat", "Vario"], ["Scoopy", "PCX"], ["Lokasi", "TikTok"]]
+    markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text(
+        "Halo bos! 👋\nCari motor apa?\n\nKetik nama motor atau pilih tombol di bawah.\nKetik /tiktok buat liat video stok.",
+        reply_markup=markup
+    )
 
-async def tombol(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    data = query.data
-    if data in KATALOG:
-        keyboard = []
-        for i, p in enumerate(KATALOG[data]):
-            keyboard.append([InlineKeyboardButton(f"{p['nama']} - {p['harga']}", callback_data=f"detail_{data}_{i}")])
-        keyboard.append([InlineKeyboardButton("🎥 TikTok Kami", url=TIKTOK_LINK)])
-        keyboard.append([InlineKeyboardButton("⬅️ Kembali", callback_data="kembali")])
-        await query.edit_message_text(f"Kamu pilih {data.upper()}. Pilih produk:", reply_markup=InlineKeyboardMarkup(keyboard))
-    elif data.startswith("detail_"):
-        _, motor, idx = data.split("_")
-        p = KATALOG[motor][int(idx)]
-        text = f"📦 {p['nama']}\n💰 {p['harga']}\n\n📝 {p['desk']}"
-        keyboard = [
-            [InlineKeyboardButton("🎥 Lihat Review di TikTok", url=TIKTOK_LINK)],
-            [InlineKeyboardButton("⬅️ Kembali ke list", callback_data=motor)]
-        ]
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
-    elif data == "kembali":
-        keyboard = [
-            [InlineKeyboardButton("🛵 BEAT", callback_data="beat")],
-            [InlineKeyboardButton("🏍️ VARIO", callback_data="vario")],
-            [InlineKeyboardButton("📦 NMAX", callback_data="nmax")],
-            [InlineKeyboardButton("🎥 TikTok Kami - batas_lintas9", url=TIKTOK_LINK)],
-        ]
-        await query.edit_message_text("Halo bro! Mau cari aksesoris apa? Pilih di bawah 👇", reply_markup=InlineKeyboardMarkup(keyboard))
+async def tiktok_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Cek video stok terbaru di TikTok kita bro! 🎥\n\n👉 {TIKTOK_LINK}\n\nFollow biar gak ketinggalan motor baru masuk!")
 
-app = Application.builder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(tombol))
-print("Bot jalan...")
-app.run_polling()
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text.lower()
+    
+    if "tiktok" in text or "tt" in text or "video" in text:
+        await update.message.reply_text(f"Cek TikTok kita bro! 🎥\n{TIKTOK_LINK}")
+    elif "lokasi" in text:
+        await update.message.reply_text("📍 Lokasi: Bungkaih, Aceh.\nBisa COD Muara Satu & sekitar Lhokseumawe.")
+    elif "nego" in text or "harga" in text:
+        await update.message.reply_text("Bisa nego bos! Langsung cek barang ke lokasi aja.")
+    else:
+        found = False
+        for key, val in DATA_MOTOR.items():
+            if key in text:
+                await update.message.reply_text(f"Stok {key.upper()}:\n{val}\n\nLihat videonya di TikTok: {TIKTOK_LINK}")
+                found = True
+                break
+        if not found:
+            await update.message.reply_text("Motornya belum ada bos. Coba ketik: Beat, Vario, Scoopy, PCX atau TikTok")
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("tiktok", tiktok_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("Bot jalan...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
