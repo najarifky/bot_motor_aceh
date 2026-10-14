@@ -1,1 +1,0 @@
-# bot_motor_aceh
